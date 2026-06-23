@@ -213,6 +213,12 @@ function init() {
   loadRoutes();
   renderRouteList();
 
+  // load saved API settings
+  const savedEndpoint = window.localStorage.getItem('busApiEndpoint') || '';
+  const savedKey = window.localStorage.getItem('busApiKey') || '';
+  if (apiEndpointInput) apiEndpointInput.value = savedEndpoint;
+  if (apiKeyInput) apiKeyInput.value = savedKey;
+
   tabRoute.addEventListener('click', () => switchPage(false));
   tabManage.addEventListener('click', () => switchPage(true));
   searchInput.addEventListener('input', () => renderRouteList(searchInput.value));
@@ -221,3 +227,141 @@ function init() {
 }
 
 window.addEventListener('DOMContentLoaded', init);
+
+// ---------- Import / Sample data helpers ----------
+async function loadAllSampleData() {
+  showMessage('正在載入示範全市資料...');
+  try {
+    const res = await fetch('data/all-routes.json');
+    if (!res.ok) throw new Error('無法取得示範資料');
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      // prepend any new routes, avoid duplicates by id
+      data.forEach(d => { if (!currentRoutes.some(r => r.id === d.id)) currentRoutes.unshift(d); });
+    } else {
+      showMessage('示範資料格式錯誤', 'error');
+      return;
+    }
+    saveRoutes();
+    renderRouteList(searchInput.value);
+    showMessage('已載入示範全市路線。', 'success');
+  } catch (err) {
+    console.error(err);
+    showMessage('載入示範資料失敗。', 'error');
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if (lines.length === 0) return [];
+  const headers = lines[0].split(',').map(h => h.trim());
+  const rows = lines.slice(1).map(line => {
+    const cols = line.split(',').map(c => c.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cols[i] || '');
+    return obj;
+  });
+  return rows;
+}
+
+function normalizeImportedRoutes(items) {
+  const out = [];
+  items.forEach(it => {
+    const id = (it.id || it.route || it.name || '').toString().trim();
+    if (!id) return;
+    const scheduleRaw = it.schedule || it.times || it.timetable || '';
+    const schedule = Array.isArray(scheduleRaw)
+      ? scheduleRaw.map(s => s.trim()).filter(Boolean)
+      : scheduleRaw.toString().split(/;|\|/).map(s => s.trim()).filter(Boolean);
+    out.push({
+      id,
+      name: it.name || id,
+      from: it.from || it.origin || '',
+      to: it.to || it.destination || '',
+      direction: it.direction || it.note || '',
+      schedule: schedule.length ? schedule : ['暫無時刻']
+    });
+  });
+  return out;
+}
+
+function handleImportFile(file) {
+  if (!file) {
+    showMessage('請先選擇檔案。', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const txt = e.target.result;
+    try {
+      let parsed;
+      if (file.name.endsWith('.json')) {
+        parsed = JSON.parse(txt);
+        if (!Array.isArray(parsed)) {
+          if (parsed && typeof parsed === 'object') parsed = Object.values(parsed);
+          else parsed = [];
+        }
+      } else {
+        parsed = parseCSV(txt);
+      }
+      const imported = normalizeImportedRoutes(parsed);
+      imported.forEach(r => { if (!currentRoutes.some(cr => cr.id === r.id)) currentRoutes.unshift(r); });
+      saveRoutes();
+      renderRouteList(searchInput.value);
+      showMessage(`已匯入 ${imported.length} 筆路線`, 'success');
+    } catch (err) {
+      console.error(err);
+      showMessage('匯入失敗，請檢查檔案格式。', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// attach import handlers after DOM loaded
+document.addEventListener('DOMContentLoaded', () => {
+  if (importBtn) importBtn.addEventListener('click', () => handleImportFile(importFileInput.files[0]));
+  if (loadSampleBtn) loadSampleBtn.addEventListener('click', loadAllSampleData);
+});
+
+// ---------- Official API fetch ----------
+async function fetchOfficialData() {
+  const endpoint = apiEndpointInput ? apiEndpointInput.value.trim() : '';
+  const key = apiKeyInput ? apiKeyInput.value.trim() : '';
+  if (!endpoint) {
+    showMessage('請先輸入官方 API Endpoint。', 'error');
+    return;
+  }
+  showMessage('從官方抓取資料中，請稍候...');
+  try {
+    const headers = {};
+    if (key) headers['Authorization'] = key;
+    const res = await fetch(endpoint, { headers });
+    if (!res.ok) throw new Error('官方 API 回傳錯誤');
+    const payload = await res.json();
+    let items = [];
+    if (Array.isArray(payload)) items = payload;
+    else if (payload && typeof payload === 'object') items = Array.isArray(payload.data) ? payload.data : Object.values(payload);
+    const imported = normalizeImportedRoutes(items);
+    if (imported.length === 0) {
+      showMessage('官方回傳無可匯入路線。', 'error');
+      return;
+    }
+    // merge and avoid duplicates
+    let added = 0;
+    imported.forEach(r => { if (!currentRoutes.some(cr => cr.id === r.id)) { currentRoutes.unshift(r); added++; } });
+    saveRoutes();
+    renderRouteList(searchInput.value);
+    // save settings
+    window.localStorage.setItem('busApiEndpoint', endpoint);
+    window.localStorage.setItem('busApiKey', key);
+    showMessage(`已從官方匯入 ${added} 筆新路線（總共 ${imported.length} 筆解析）。`, 'success');
+  } catch (err) {
+    console.error(err);
+    showMessage('從官方匯入失敗，請檢查 Endpoint 或網路。', 'error');
+  }
+}
+
+// bind fetch button
+document.addEventListener('DOMContentLoaded', () => {
+  if (fetchOfficialBtn) fetchOfficialBtn.addEventListener('click', fetchOfficialData);
+});

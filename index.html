@@ -65,6 +65,28 @@
             <button type="submit" class="primary">儲存路線</button>
           </div>
         </form>
+        <div class="import-row">
+          <input id="importFileInput" type="file" accept=".json,.csv" />
+          <div class="button-row">
+            <button id="importBtn" type="button" class="secondary">匯入 JSON/CSV</button>
+            <button id="loadSampleBtn" type="button" class="secondary">載入示範全市資料</button>
+          </div>
+        </div>
+
+        <div class="api-row">
+          <label>
+            官方 API Endpoint
+            <input id="apiEndpoint" type="url" placeholder="https://api.example.com/bus/routes.json" />
+          </label>
+          <label>
+            API Key (選填)
+            <input id="apiKey" type="text" placeholder="若需要請填入" />
+          </label>
+          <div class="button-row">
+            <button id="fetchOfficialBtn" type="button" class="primary">從官方匯入</button>
+          </div>
+        </div>
+
         <div id="manageMessage" class="message"></div>
       </div>
     </section>
