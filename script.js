@@ -64,20 +64,34 @@ const defaultRoutes = [
   }
 ];
 
+const fullCityRoutesUrl = 'data/all-routes.json';
 let currentRoutes = [];
 let selectedRouteId = null;
 
-function loadRoutes() {
+async function loadRoutes() {
   const saved = window.localStorage.getItem('kaohsiungBusRoutes');
   if (saved) {
     try {
       currentRoutes = JSON.parse(saved);
+      return;
     } catch (error) {
-      currentRoutes = [...defaultRoutes];
+      console.warn('本機儲存資料解析失敗，改為載入全市範例資料。', error);
     }
-  } else {
-    currentRoutes = [...defaultRoutes];
   }
+
+  try {
+    const response = await fetch(fullCityRoutesUrl);
+    if (response.ok) {
+      const data = await response.json();
+      currentRoutes = Array.isArray(data) ? data : [...defaultRoutes];
+      return;
+    }
+    console.warn('無法載入全市資料，改為使用預設資料');
+  } catch (error) {
+    console.warn('載入全市資料時發生錯誤，改為使用預設資料。', error);
+  }
+
+  currentRoutes = [...defaultRoutes];
 }
 
 function saveRoutes() {
@@ -199,7 +213,17 @@ async function autoFillSchedule() {
     }
 
     if (!routeData) {
-      showMessage('找不到對應路線的 API 資料，請手動填寫時刻表。', 'error');
+      const allRoutesResponse = await fetch(fullCityRoutesUrl);
+      if (allRoutesResponse.ok) {
+        const allRoutes = await allRoutesResponse.json();
+        if (Array.isArray(allRoutes)) {
+          routeData = allRoutes.find((item) => item.id === routeId || item.name === routeId) || null;
+        }
+      }
+    }
+
+    if (!routeData) {
+      showMessage('找不到對應路線的 API 或內建資料，請手動填寫時刻表。', 'error');
       return;
     }
 
@@ -257,8 +281,8 @@ function handleRouteSave(event) {
   showMessage(`已新增路線 ${routeId}，請到路線查詢頁查看。`, 'success');
 }
 
-function init() {
-  loadRoutes();
+async function init() {
+  await loadRoutes();
   renderRouteList();
 
   // load saved API settings
