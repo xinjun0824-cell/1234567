@@ -463,3 +463,106 @@ async function fetchOfficialData() {
 document.addEventListener('DOMContentLoaded', () => {
   if (fetchOfficialBtn) fetchOfficialBtn.addEventListener('click', fetchOfficialData);
 });
+
+// ---------- Batch Update Helpers ----------
+function generateGoogleMapsLinks() {
+  const batchMessage = document.getElementById('batchMessage');
+  if (currentRoutes.length === 0) {
+    batchMessage.textContent = '無路線可生成。';
+    batchMessage.className = 'message error';
+    return;
+  }
+
+  // 創建一個 HTML 頁面，顯示所有路線的 Google Maps 查詢鏈接
+  const links = currentRoutes.map(route => {
+    const routeNum = encodeURIComponent(route.name);
+    const url = `https://www.google.com/maps/search/高雄公交+${routeNum}`;
+    return `<tr>
+      <td>${route.id}</td>
+      <td>${route.name}</td>
+      <td>${route.from} → ${route.to}</td>
+      <td><a href="${url}" target="_blank" rel="noopener noreferrer">查詢時刻表</a></td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="zh-Hant">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>高雄公車 Google Maps 時刻表查詢列表</title>
+      <style>
+        body { font-family: "Noto Sans TC", sans-serif; padding: 20px; background: #f5f7fb; }
+        h1 { color: #0066cc; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #0066cc; color: white; font-weight: bold; }
+        tr:hover { background: #f9f9f9; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .info { background: #e8f3ff; padding: 12px; border-radius: 6px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <h1>高雄公車 Google Maps 時刻表查詢列表</h1>
+      <div class="info">
+        <strong>使用方法：</strong> 點擊右欄的「查詢時刻表」鏈接，在 Google Maps 上查看該路線的最新官方時刻表和班次資訊。查詢完成後，你可以複製時刻表數據並回到應用中更新。
+      </div>
+      <p><strong>總路線數：${currentRoutes.length}</strong></p>
+      <table>
+        <thead>
+          <tr>
+            <th>路線編號</th>
+            <th>路線名稱</th>
+            <th>起點 → 終點</th>
+            <th>Google Maps 查詢</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${links}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  // 打開新視窗顯示列表
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+
+  batchMessage.textContent = `已生成 ${currentRoutes.length} 條路線的 Google Maps 查詢列表，請在新視窗中查詢時刻表。`;
+  batchMessage.className = 'message success';
+}
+
+function exportCurrentData() {
+  if (currentRoutes.length === 0) {
+    alert('無路線數據可匯出。');
+    return;
+  }
+
+  const dataStr = JSON.stringify(currentRoutes, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `kaohsiung-bus-routes-${new Date().getTime()}.json`;
+  link.click();
+
+  const batchMessage = document.getElementById('batchMessage');
+  batchMessage.textContent = `已匯出 ${currentRoutes.length} 條路線數據，檔案名：${link.download}`;
+  batchMessage.className = 'message success';
+}
+
+// 綁定批量更新按鈕
+document.addEventListener('DOMContentLoaded', () => {
+  const generateGoogleMapsBtn = document.getElementById('generateGoogleMapsBtn');
+  const exportCurrentDataBtn = document.getElementById('exportCurrentDataBtn');
+  
+  if (generateGoogleMapsBtn) {
+    generateGoogleMapsBtn.addEventListener('click', generateGoogleMapsLinks);
+  }
+  if (exportCurrentDataBtn) {
+    exportCurrentDataBtn.addEventListener('click', exportCurrentData);
+  }
+});

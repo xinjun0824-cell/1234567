@@ -245,6 +245,25 @@ label textarea {
   font-size: 1.1rem;
 }
 
+.batch-update-row {
+  margin-top: 24px;
+  padding: 18px;
+  background: #f0f9ff;
+  border-radius: 14px;
+  border-left: 4px solid #0066cc;
+}
+
+.batch-update-row h3 {
+  margin-top: 0;
+  color: #0066cc;
+}
+
+.batch-update-row p {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 8px 0 12px;
+}
+
 .button-row {
   display: flex;
   gap: 12px;
