@@ -125,12 +125,23 @@ function renderRouteList(filter = '') {
   });
 }
 
+function getRouteSchedule(route) {
+  if (!route || !route.schedule) return ['暫無可用時刻表資料'];
+  let schedule = Array.isArray(route.schedule)
+    ? route.schedule.map((item) => item.toString().trim())
+    : route.schedule.toString().split(/\r?\n|;|\||,/).map((item) => item.trim());
+  schedule = schedule.filter((item) => item);
+  return schedule.length ? schedule : ['暫無可用時刻表資料'];
+}
+
 function showRouteDetail(route) {
   detailTitle.textContent = `路線 ${route.name}：${route.from} → ${route.to}`;
-  const scheduleItems = route.schedule.map((time) => `<li>${time}</li>`).join('');
+  const scheduleItems = getRouteSchedule(route).map((time) => `<li>${time}</li>`).join('');
+  const missingSchedule = !Array.isArray(route.schedule) || route.schedule.length === 0;
   detailContent.innerHTML = `
-    <div class="badge">${route.direction}</div>
+    <div class="badge">${route.direction || '方向資訊不完整'}</div>
     <p>此路線的示範時刻表如下，實際班距可能依路線調整。</p>
+    ${missingSchedule ? '<p class="warning">本路線的時刻表資料不足，請手動補上或使用自動填入。</p>' : ''}
     <h3>發車時刻</h3>
     <ul>${scheduleItems}</ul>
   `;
