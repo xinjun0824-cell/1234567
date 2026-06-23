@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>高雄公車時刻表</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <h1>高雄公車時刻表</h1>
+      <p>純前端應用，支援路線查詢與自訂新增管理</p>
+    </div>
+    <nav class="tabs">
+      <button id="tabRoute" class="tab-button active">路線查詢</button>
+      <button id="tabManage" class="tab-button">路線管理</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="route-view" class="page active">
+      <div class="panel routes-panel">
+        <div class="panel-header">
+          <h2>高雄公車路線</h2>
+          <input id="searchInput" type="search" placeholder="搜尋路線名稱或編號" aria-label="搜尋路線" />
+        </div>
+        <ul id="routeList" class="route-list"></ul>
+      </div>
+
+      <div class="panel detail-panel">
+        <h2 id="detailTitle">請選擇一條路線</h2>
+        <div id="detailContent" class="detail-content">
+          <p>點擊左側路線，查看詳細時刻表與方向資訊。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="manage-view" class="page">
+      <div class="panel manage-panel">
+        <h2>新增公車路線</h2>
+        <form id="routeForm">
+          <label>
+            路線編號
+            <input id="routeName" type="text" placeholder="例如 1、5、33" required />
+          </label>
+          <label>
+            起點
+            <input id="routeFrom" type="text" placeholder="例如 南站" required />
+          </label>
+          <label>
+            終點
+            <input id="routeTo" type="text" placeholder="例如 巨蛋" required />
+          </label>
+          <label>
+            方向說明
+            <input id="routeDirection" type="text" placeholder="例如 往巨蛋" required />
+          </label>
+          <label>
+            時刻表（每行一筆時間）
+            <textarea id="scheduleInput" rows="6" placeholder="06:30\n07:00\n07:30"></textarea>
+          </label>
+          <div class="button-row">
+            <button type="button" id="autoFillBtn" class="secondary">自動填入</button>
+            <button type="submit" class="primary">儲存路線</button>
+          </div>
+        </form>
+        <div id="manageMessage" class="message"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
