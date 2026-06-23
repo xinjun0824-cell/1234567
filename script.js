@@ -13,6 +13,12 @@ const routeToInput = document.getElementById('routeTo');
 const routeDirectionInput = document.getElementById('routeDirection');
 const scheduleInput = document.getElementById('scheduleInput');
 const autoFillBtn = document.getElementById('autoFillBtn');
+const importFileInput = document.getElementById('importFileInput');
+const importBtn = document.getElementById('importBtn');
+const loadSampleBtn = document.getElementById('loadSampleBtn');
+const apiEndpointInput = document.getElementById('apiEndpoint');
+const apiKeyInput = document.getElementById('apiKey');
+const fetchOfficialBtn = document.getElementById('fetchOfficialBtn');
 const manageMessage = document.getElementById('manageMessage');
 
 const defaultRoutes = [
@@ -219,14 +225,21 @@ function init() {
   if (apiEndpointInput) apiEndpointInput.value = savedEndpoint;
   if (apiKeyInput) apiKeyInput.value = savedKey;
 
-  tabRoute.addEventListener('click', () => switchPage(false));
-  tabManage.addEventListener('click', () => switchPage(true));
-  searchInput.addEventListener('input', () => renderRouteList(searchInput.value));
-  routeForm.addEventListener('submit', handleRouteSave);
-  autoFillBtn.addEventListener('click', autoFillSchedule);
+  tabRoute && tabRoute.addEventListener('click', () => switchPage(false));
+  tabManage && tabManage.addEventListener('click', () => switchPage(true));
+  searchInput && searchInput.addEventListener('input', () => renderRouteList(searchInput.value));
+  routeForm && routeForm.addEventListener('submit', handleRouteSave);
+  autoFillBtn && autoFillBtn.addEventListener('click', autoFillSchedule);
+  importBtn && importBtn.addEventListener('click', () => handleImportFile(importFileInput.files[0]));
+  loadSampleBtn && loadSampleBtn.addEventListener('click', loadAllSampleData);
+  fetchOfficialBtn && fetchOfficialBtn.addEventListener('click', fetchOfficialData);
 }
 
-window.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // ---------- Import / Sample data helpers ----------
 async function loadAllSampleData() {
@@ -316,12 +329,6 @@ function handleImportFile(file) {
   };
   reader.readAsText(file);
 }
-
-// attach import handlers after DOM loaded
-document.addEventListener('DOMContentLoaded', () => {
-  if (importBtn) importBtn.addEventListener('click', () => handleImportFile(importFileInput.files[0]));
-  if (loadSampleBtn) loadSampleBtn.addEventListener('click', loadAllSampleData);
-});
 
 // ---------- Official API fetch ----------
 async function fetchOfficialData() {
