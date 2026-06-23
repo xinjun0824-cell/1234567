@@ -143,6 +143,38 @@ function normalizeRouteId(value) {
   return value.trim();
 }
 
+function buildRouteQueryUrl(routeId) {
+  const endpoint = apiEndpointInput ? apiEndpointInput.value.trim() : '';
+  if (!endpoint) return '';
+  if (endpoint.includes('{route}')) {
+    return endpoint.replace(/{route}/g, encodeURIComponent(routeId));
+  }
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return `${endpoint}${separator}route=${encodeURIComponent(routeId)}`;
+}
+
+async function fetchRouteFromApi(routeId) {
+  const url = buildRouteQueryUrl(routeId);
+  if (!url) return null;
+  const headers = {};
+  const key = apiKeyInput ? apiKeyInput.value.trim() : '';
+  if (key) headers['Authorization'] = key;
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error('官方 API 回傳錯誤');
+  }
+  const payload = await response.json();
+  let items = [];
+  if (Array.isArray(payload)) {
+    items = payload;
+  } else if (payload && typeof payload === 'object') {
+    if (Array.isArray(payload.data)) items = payload.data;
+    else items = Object.values(payload);
+  }
+  const imported = normalizeImportedRoutes(items);
+  return imported.find((item) => item.id === routeId) || null;
+}
+
 async function autoFillSchedule() {
   const routeId = normalizeRouteId(routeNameInput.value);
   if (!routeId) {
@@ -153,12 +185,18 @@ async function autoFillSchedule() {
   showMessage('正在自動填入時刻表，請稍候...');
 
   try {
-    const response = await fetch('data/bus-autofill.json');
-    if (!response.ok) {
-      throw new Error('無法讀取 API 資料');
+    let routeData = null;
+    if (apiEndpointInput && apiEndpointInput.value.trim()) {
+      routeData = await fetchRouteFromApi(routeId);
     }
-    const data = await response.json();
-    const routeData = data[routeId];
+
+    if (!routeData) {
+      const response = await fetch('data/bus-autofill.json');
+      if (response.ok) {
+        const data = await response.json();
+        routeData = data[routeId] || null;
+      }
+    }
 
     if (!routeData) {
       showMessage('找不到對應路線的 API 資料，請手動填寫時刻表。', 'error');
@@ -168,11 +206,15 @@ async function autoFillSchedule() {
     routeFromInput.value = routeData.from || routeFromInput.value;
     routeToInput.value = routeData.to || routeToInput.value;
     routeDirectionInput.value = routeData.direction || routeDirectionInput.value;
-    scheduleInput.value = routeData.schedule.join('\n');
+    if (Array.isArray(routeData.schedule)) {
+      scheduleInput.value = routeData.schedule.join('\n');
+    } else {
+      scheduleInput.value = routeData.schedule ? routeData.schedule.toString() : scheduleInput.value;
+    }
     showMessage('已自動填入時刻表，請確認資料後儲存。', 'success');
   } catch (error) {
-    showMessage('自動填入失敗，請稍後再試。', 'error');
     console.error(error);
+    showMessage('自動填入失敗，請稍後再試。', 'error');
   }
 }
 
