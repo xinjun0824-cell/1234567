@@ -213,6 +213,38 @@ label textarea {
   margin: 14px 0 0;
 }
 
+.detail-actions {
+  margin: 16px 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-google-maps {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #4285f4;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-google-maps:hover {
+  background: #357ae8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.btn-google-maps i {
+  font-size: 1.1rem;
+}
+
 .button-row {
   display: flex;
   gap: 12px;

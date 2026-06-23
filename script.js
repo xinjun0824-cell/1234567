@@ -143,10 +143,19 @@ function showRouteDetail(route) {
   // 使用網格或多列顯示時刻表，以節省空間並提高可讀性
   const scheduleItems = schedule.map((time) => `<li>${time}</li>`).join('');
   
+  // 建立 Google Maps 查詢 URL
+  const routeNum = encodeURIComponent(route.name);
+  const googleMapsUrl = `https://www.google.com/maps/search/高雄公交+${routeNum}`;
+  
   detailContent.innerHTML = `
     <div class="badge">${route.direction || '方向資訊不完整'}</div>
     <p>此路線的示範時刻表如下，實際班距可能依路線調整。</p>
     ${missingSchedule ? '<p class="warning">本路線的時刻表資料不足，請手動補上或使用自動填入。</p>' : ''}
+    <div class="detail-actions">
+      <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-google-maps">
+        <i class="fab fa-google"></i> Google Maps 查詢官方時刻表
+      </a>
+    </div>
     <h3>發車時刻 <span class="schedule-count">（共 ${scheduleCount} 班）</span></h3>
     <ul class="schedule-grid">${scheduleItems}</ul>
   `;
